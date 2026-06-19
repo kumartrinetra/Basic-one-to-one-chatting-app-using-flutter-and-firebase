@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class MyChatsScreen extends StatefulWidget {
-  String input;
+  String input; //input String..
   String name;
   MyChatsScreen(this.input, this.name);
 
