@@ -18,16 +18,17 @@ allprojects {
     }
 }
 
-dependencyLocking {
-    lockAllConfigurations()
-}
-
 rootProject.buildDir = "../build"
+
 subprojects {
-    project.buildDir = "%rootProject.buildDir%/${project.name}"
-}
-subprojects {
+    // Set each subproject's build directory relative to the root build directory
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    // Ensure subprojects are evaluated after the :app project
     project.evaluationDependsOn(":app")
+    // Enable dependency locking for all configurations in subprojects
+    dependencyLocking {
+        lockAllConfigurations()
+    }
 }
 
 tasks.register("clean", Delete) {
