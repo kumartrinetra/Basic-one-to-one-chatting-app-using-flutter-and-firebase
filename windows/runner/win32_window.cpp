@@ -8,10 +8,10 @@
 namespace {
 
 /// Window attribute that enables dark mode window decorations.
-///
-/// Redefined in case the developer's machine has a Windows SDK older than
-/// version 10.0.22000.0.
-/// See: https://docs.microsoft.com/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
+//
+Redefined in case the developer's machine has a Windows SDK older than
+// version 10.0.22000.0.
+// See: https://docs.microsoft.com/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
@@ -19,15 +19,16 @@ namespace {
 constexpr const wchar_t kWindowClassName[] = L"FLUTTER_RUNNER_WIN32_WINDOW";
 
 /// Registry key for app theme preference.
-///
-/// A value of 0 indicates apps should use dark mode. A non-zero or missing
-/// value indicates apps should use light mode.
+//
+A value of 0 indicates apps should use dark mode. A non-zero or missing
+// value indicates apps should use light mode.
 constexpr const wchar_t kGetPreferredBrightnessRegKey[] =
-  L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
+  L"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
 constexpr const wchar_t kGetPreferredBrightnessRegValue[] = L"AppsUseLightTheme";
 
 // The number of Win32Window objects that currently exist.
-static int g_active_window_count = 0;
+constexpr int kActiveWindowCountInit = 0;
+int g_active_window_count = kActiveWindowCountInit;
 
 using EnableNonClientDpiScaling = BOOL __stdcall(HWND hwnd);
 
@@ -44,10 +45,10 @@ void EnableFullDpiSupportIfAvailable(HWND hwnd) {
   if (!user32_module) {
     return;
   }
-  auto enable_non_client_dpi_scaling =
-      reinterpret_cast<EnableNonClientDpiScaling*>(
-          GetProcAddress(user32_module, "EnableNonClientDpiScaling"));
-  if (enable_non_client_dpi_scaling != nullptr) {
+  FARPROC enable_non_client_dpi_scaling_proc = GetProcAddress(user32_module, "EnableNonClientDpiScaling");
+  if (enable_non_client_dpi_scaling_proc != nullptr) {
+    auto enable_non_client_dpi_scaling =
+        reinterpret_cast<EnableNonClientDpiScaling*>(enable_non_client_dpi_scaling_proc);
     enable_non_client_dpi_scaling(hwnd);
   }
   FreeLibrary(user32_module);
@@ -61,9 +62,9 @@ class WindowClassRegistrar {
   ~WindowClassRegistrar() = default;
 
   // Returns the singleton registrar instance.
-  static WindowClassRegistrar* GetInstance() {
+  static std::unique_ptr<WindowClassRegistrar> GetInstance() {
     if (!instance_) {
-      instance_ = new WindowClassRegistrar();
+      instance_ = std::make_unique<WindowClassRegistrar>();
     }
     return instance_;
   }
@@ -79,12 +80,12 @@ class WindowClassRegistrar {
  private:
   WindowClassRegistrar() = default;
 
-  static WindowClassRegistrar* instance_;
+  static std::unique_ptr<WindowClassRegistrar> instance_;
 
   bool class_registered_ = false;
 };
 
-WindowClassRegistrar* WindowClassRegistrar::instance_ = nullptr;
+std::unique_ptr<WindowClassRegistrar> WindowClassRegistrar::instance_ = nullptr;
 
 const wchar_t* WindowClassRegistrar::GetWindowClass() {
   if (!class_registered_) {
@@ -222,8 +223,6 @@ Win32Window::MessageHandler(HWND hwnd,
 }
 
 void Win32Window::Destroy() {
-  OnDestroy();
-
   if (window_handle_) {
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
